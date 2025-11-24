@@ -6,7 +6,7 @@ import arxiv
 from arxivterminal.models import ArxivPaper
 
 
-def download_paper(paper: ArxivPaper, paper_dir: str = "./arxiv_papers"):
+def download_paper(paper: ArxivPaper, paper_dir: str = "/home/seva/docs/downloads"):
     """
     Downloads an Arxiv paper as PDF to the specified directory.
 
@@ -15,7 +15,7 @@ def download_paper(paper: ArxivPaper, paper_dir: str = "./arxiv_papers"):
     paper: ArxivPaper
         The paper to be downloaded.
     paper_dir: str
-        The path where the paper will be saved. Defaults to ./arxiv_papers
+        The path where the paper will be saved. Defaults to ~/docs/downloads
         which means the PDFs will be stored relative to the current
         directory of the script.
     """

@@ -1,7 +1,7 @@
 import logging
 import sqlite3
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Sequence
 
 from arxivterminal.models import ArxivPaper, ArxivStats
 
@@ -148,7 +148,9 @@ class ArxivDatabase:
         logging.info(f"Updated {num_updated} papers")
 
     def get_papers(
-        self, published_after: Optional[datetime] = None
+        self,
+        published_after: Optional[datetime] = None,
+        categories: Optional[List[str]] = None,
     ) -> List[ArxivPaper]:
         """
         Retrieve papers from the database that were published after a specified date.
@@ -194,6 +196,10 @@ class ArxivDatabase:
             for row in cursor.fetchall():
                 paper = self.convert_to_paper(row)
                 papers.append(paper)
+
+            if categories:
+                allowed = {c. strip() for c in categories if c.strip()}
+                papers = [p for p in papers if not allowed.isdisjoint(set(p.categories))]
 
         return papers
 

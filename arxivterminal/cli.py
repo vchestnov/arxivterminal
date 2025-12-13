@@ -25,7 +25,7 @@ def cli():
 @click.option("--num-days", default=7, help="Number of days to fetch papers.")
 @click.option(
     "--categories",
-    default="cs.AI,cs.LG",  # AI and Machine Learning categories
+    default="hep-th,hep-ph",
     help="Comma-separated list of categories to fetch papers.",
 )
 def fetch(num_days, categories):
@@ -51,13 +51,20 @@ def delete_all():
 
 @click.command()
 @click.option("--days-ago", default=7, help="Number of days ago to fetch papers.")
-def show(days_ago):
+@click.option(
+    "--categories",
+    default="hep-th,hep-ph",
+    help="Comma-separated list of categories to show.",
+)
+def show(days_ago, categories):
     """
     Show papers fetched from the specified number of days ago.
     """
+    # categories = categories.split(",")
+    categories = [c.strip() for c in categories.split(",") if c.strip()]
     published_after = datetime.now() - timedelta(days=days_ago)
     db = ArxivDatabase(DATABASE_PATH)
-    papers = db.get_papers(published_after)
+    papers = db.get_papers(published_after, categories=categories)
 
     try:
         print_papers(papers)

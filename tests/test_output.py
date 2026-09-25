@@ -1,7 +1,11 @@
+from datetime import datetime
+from types import SimpleNamespace
+
 import pytest
 
 from arxivterminal.db import ArxivStats
-from arxivterminal.output import print_stats
+from arxivterminal.download import PaperDownloadRateLimitError
+from arxivterminal.output import print_papers, print_stats
 
 
 @pytest.fixture
@@ -26,3 +30,36 @@ def test_print_stats(capsys, test_stats):
     assert output[4] == "2023-01-03 | 2"
     assert output[5] == "-------------------"
     assert output[6] == "Total count: 10"
+
+
+def test_print_papers_shows_download_rate_limit_note(monkeypatch, capsys):
+    paper = SimpleNamespace(
+        entry_id="http://arxiv.org/abs/1234.5678",
+        updated=datetime.now(),
+        published=datetime.now(),
+        title="Test Paper",
+        summary="Summary",
+        authors=["Author One"],
+        categories=["math.AG"],
+        viewed=False,
+    )
+
+    inputs = iter(["1", "d", "q"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(inputs))
+    monkeypatch.setattr(
+        "arxivterminal.output.download_paper",
+        lambda _paper: (_ for _ in ()).throw(PaperDownloadRateLimitError("429")),
+    )
+
+    class DummyDb:
+        def mark_paper_viewed(self, _paper):
+            pass
+
+    monkeypatch.setattr("arxivterminal.output.ArxivDatabase", lambda _path: DummyDb())
+
+    with pytest.raises(Exception) as exc_info:
+        print_papers([paper], show_dates=False)
+
+    assert exc_info.type.__name__ == "ExitAppException"
+    output = capsys.readouterr().out
+    assert "Download skipped: arXiv API rate-limited request. Try later." in output

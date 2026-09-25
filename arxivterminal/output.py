@@ -4,7 +4,11 @@ from termcolor import colored
 
 from arxivterminal.constants import DATABASE_PATH
 from arxivterminal.db import ArxivDatabase, ArxivStats
-from arxivterminal.download import download_paper
+from arxivterminal.download import (
+    PaperDownloadError,
+    PaperDownloadRateLimitError,
+    download_paper,
+)
 from arxivterminal.fetch import ArxivPaper
 
 
@@ -85,7 +89,11 @@ def print_papers(papers: List[ArxivPaper], show_dates: bool = True):
                     try:
                         download_paper(selected_paper)
                     except FileExistsError:
-                        pass
+                        print("Paper already downloaded.")
+                    except PaperDownloadRateLimitError:
+                        print("Download skipped: arXiv API rate-limited request. Try later.")
+                    except PaperDownloadError as exc:
+                        print(f"Download failed: {exc}")
                     user_input = input(
                         "Enter 'b' to go back, 'd' to download, or 'q' to quit: "
                     )

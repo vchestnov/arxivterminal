@@ -13,7 +13,7 @@
 
 ## [0.2.0] - 2023-04-14
 ### Added
-- Ability to search for similar abstracts using LSA model
+- Search improvements for abstracts
 
 ## [0.1.0] - 2023-04-14
 ### Added

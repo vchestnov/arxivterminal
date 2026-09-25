@@ -6,7 +6,7 @@ import click
 
 from arxivterminal.constants import DATABASE_PATH, LOG_PATH
 from arxivterminal.db import ArxivDatabase
-from arxivterminal.fetch import download_papers
+from arxivterminal.fetch import check_api, download_papers_with_status
 from arxivterminal.output import ExitAppException, print_papers, print_stats
 
 
@@ -36,8 +36,21 @@ def fetch(num_days, categories):
     db = ArxivDatabase(DATABASE_PATH)
     for category in categories:
         logging.info(f"Fetching papers from {category}")
-        papers = download_papers(category, num_days=num_days)
-        db.save_papers(papers)
+        result = download_papers_with_status(category, num_days=num_days)
+        if result.rate_limited:
+            click.echo(
+                f"Skipped {category}: arXiv API rate-limited requests for this category."
+            )
+            continue
+
+        if result.http_error_status is not None:
+            click.echo(
+                f"Skipped {category}: arXiv API returned HTTP "
+                f"{result.http_error_status}."
+            )
+            continue
+
+        db.save_papers(result.papers)
 
 
 @click.command()
@@ -84,6 +97,35 @@ def stats():
     print(f"Data path: {DATABASE_PATH}")
 
 
+@click.command(name="check-api")
+@click.option("--category", default="math.AG", help="Category to probe.")
+@click.option("--max-results", default=1, help="Number of results to request.")
+def check_api_command(category, max_results):
+    """
+    Probe arXiv API and report rate-limit status for one category.
+    """
+    result = check_api(category=category, max_results=max_results)
+    if result.ok:
+        click.echo(
+            f"{result.message}: arXiv API responded for {result.category} "
+            f"(status {result.status_code})."
+        )
+        return
+
+    if result.status_code == 429:
+        click.echo(
+            f"{result.message}: arXiv API rejected {result.category} "
+            f"(status {result.status_code}). Try later or another network."
+        )
+        sys.exit(2)
+
+    click.echo(
+        f"{result.message}: arXiv API probe failed for {result.category} "
+        f"(status {result.status_code})."
+    )
+    sys.exit(1)
+
+
 @click.command()
 @click.argument("query")
 @click.option(
@@ -102,7 +144,7 @@ def search(query, limit):
         sys.exit(0)
 
 
-for cmd in [delete_all, fetch, search, show, stats]:
+for cmd in [check_api_command, delete_all, fetch, search, show, stats]:
     cli.add_command(cmd)
 
 if __name__ == "__main__":

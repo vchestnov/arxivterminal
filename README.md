@@ -9,7 +9,7 @@ Arxiv Terminal is a command-line interface (CLI) tool for fetching, searching, a
 
 - Fetch paper abstracts from specified categories and save them in a local sqllite database.
 - Show fetched papers and interatively open for more detailed abstracts
-- Search fetched papers based on a query (Currently supports pattern + LSA semantic search)
+- Search fetched papers based on a query
 - Download papers locally as PDF
 
 ![Demo](https://raw.githubusercontent.com/jbencina/arxivterminal/main/static/demo.gif)
@@ -43,6 +43,7 @@ The CLI is invoked using the `arxiv` command, followed by one of the available c
 - `arxiv show [--days-ago]`: Show papers fetched from the specified number of days ago.
 - `arxiv stats`: Show statistics of the papers stored in the database.
 - `arxiv search <query>`: Search papers in the database based on a query.
+- `arxiv check-api [--category] [--max-results]`: Probe arXiv API and report rate-limit status.
 
 ### Examples
 
@@ -80,24 +81,8 @@ Show papers containing the phrase "deep learning":
 arxiv search "deep learning"
 ```
 
-Show papers containing the phrase "deep learning" using LSA matching:
+Check whether arXiv is rate-limiting your current network/category:
 
 ```bash
-arxiv search -e "deep learning"
-```
-
-### LSA Search Model
-> Note: This approach is likely to be replaced in the future by more robust methodology
-
-The LSA search model is largely adapted from the implementation featured in the scikit-learn [User Guide](
-https://scikit-learn.org/stable/auto_examples/text/plot_document_clustering.html#sphx-glr-auto-examples-text-plot-document-clustering-py) example.
-When used, the model is trained over the entire corpus of abstracts present in the user's local database. The model
-is persisted in the app cache folder and automatically reloaded on subsequent runs. During a search query, all abstracts
-from the database are encoded as n-dimensional vectors using the trained LSA model. The search query is also represented
-as a vector, and a cosine similarity is performed to find the top ranking items.
-
-You may want to force a refresh of the underlying model after loading new papers. This can be done by using the `-f`
-flag when performing a search:
-```bash
-arxiv search -e -f "deep learning"
+arxiv check-api --category math.AG
 ```
